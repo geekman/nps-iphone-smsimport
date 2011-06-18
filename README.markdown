@@ -34,11 +34,11 @@ You need at least Python 2.6 running Windows on the same machine as the
 Samsung NPS software, or you could copy the database and manually specify
 its path.
 
-    - Samsung NPS database
-    - Python 2.6 on Windows
-    - Python for Windows extensions (pywin32)   
-	  <http://sourceforge.net/projects/pywin32/>
-    - Jailbroken iPhone -or- iTunes backup of the iPhone
+- Samsung NPS database
+- Python 2.6 on Windows
+- Python for Windows extensions (pywin32)   
+  <http://sourceforge.net/projects/pywin32/>
+- Jailbroken iPhone -or- iTunes backup of the iPhone
 
 
 TODO
