@@ -280,42 +280,37 @@ if __name__ == '__main__':
 		print_usage()
 		sys.exit(2)
 
-	nps_db_path = None
-	sms_db_path = 'sms.db'
-	verbose = False
-	skip_prompt = False
-	country = None
-	after_date = ''
-	dry_run = False
+	config = {
+		'nps_db_path':		None,
+		'sms_db_path':		'sms.db',
+		'verbose':			False,
+		'skip_prompt':		False,
+		'country':			None,
+		'after_date':		'',
+		'dry_run':			False,
+	}
 
 	for opt, arg in opts:
-		if opt == '--smsdb':
-			sms_db_path = arg
-		elif opt == '--npsdb':
-			nps_db_path = arg
-		elif opt == '--country':
-			country = arg
-		elif opt == '--after-date':
-			after_date = arg
-		elif opt == '--yes':
-			skip_prompt = True
-		elif opt == '--verbose':
-			verbose = True
-		elif opt == '--dry-run':
-			dry_run = True
+		opt = opt[2:].replace('-', '_')
 
-	if not country:
+		if type(config[opt]) is bool:
+			config[opt] = True
+		else:
+			# needs arg
+			config[opt] = arg
+
+	if not config['country']:
 		print "error: country was not specified"
 		print_usage()
 		sys.exit(2)
 
 	# process NPS filters
 	nps_filters = []
-	if after_date:
-		nps_filters.append("CREATE_DATE >= #" + after_date + "#")
+	if config['after_date']:
+		nps_filters.append("CREATE_DATE >= #" + config['after_date'] + "#")
 
-	nps_sms = read_NPS_sms(nps_db_path, nps_filters)
-	isms = iPhoneSMSDB(country, sms_db_path)
+	nps_sms = read_NPS_sms(config['nps_db_path'], nps_filters)
+	isms = iPhoneSMSDB(config['country'], config['sms_db_path'])
 
 	count_total		= 0
 	count_empty		= 0
@@ -332,10 +327,10 @@ if __name__ == '__main__':
 			continue
 
 		if isms.sms_exists(s):
-			if verbose: print "duplicate SMS", s
+			if config['verbose']: print "duplicate SMS", s
 			count_dup += 1
 		else:
-			if verbose:
+			if config['verbose']:
 				if not isms.get_group_id(s['address']):
 					print "adding group for", s['address']
 					count_newgrp += 1
@@ -352,12 +347,12 @@ if __name__ == '__main__':
 	print "TOTAL:\t\t", count_total
 	print
 
-	if dry_run:
+	if config['dry_run']:
 		isms.rollback()
 		sys.exit(0)
 
 	do_commit = True
-	if not skip_prompt:
+	if not config['skip_prompt']:
 		do_commit = raw_input("commit? (y/N) ").strip().lower() == 'y'
 
 	if do_commit:
