@@ -307,7 +307,7 @@ if __name__ == '__main__':
 	# process NPS filters
 	nps_filters = []
 	if config['after_date']:
-		nps_filters.append("CREATE_DATE >= #" + config['after_date'] + "#")
+		nps_filters.append("CREATE_DATE >= #%s#" % (config['after_date']))
 
 	nps_sms = read_NPS_sms(config['nps_db_path'], nps_filters)
 	isms = iPhoneSMSDB(config['country'], config['sms_db_path'])
@@ -330,11 +330,10 @@ if __name__ == '__main__':
 			if config['verbose']: print "duplicate SMS", s
 			count_dup += 1
 		else:
-			if config['verbose']:
-				if not isms.get_group_id(s['address']):
-					print "adding group for", s['address']
-					count_newgrp += 1
-				print "inserting SMS", s
+			if not isms.get_group_id(s['address']):
+				if config['verbose']: print "adding group for", s['address']
+				count_newgrp += 1
+			if config['verbose']: print "inserting SMS", s
 			isms.insert_sms(s)
 			count_inserted += 1
 
