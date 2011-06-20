@@ -83,17 +83,11 @@ class iPhoneSMSDB:
 		"""Converts a dict and SQL statement prefix, returns an INSERT 
 		prepared statement and values."""
 
-		cols = []
-		values = []
-		for k, v in d.iteritems():
-			cols.append(k)
-			values.append(v)
-
 		return '%s(%s) VALUES(%s)' % (
 					sql_stm, 
-					','.join(cols), 
-					','.join(['?'] * len(values))), \
-				values
+					','.join(d.keys()), 
+					','.join(['?'] * len(d))), \
+				d.values()
 
 
 	def get_latest_sms_date(self):
