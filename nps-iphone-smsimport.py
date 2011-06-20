@@ -55,6 +55,11 @@ class iPhoneSMSDB:
 		self.db.commit()
 
 
+	def rollback(self):
+		"""Rolls back changes to the database"""
+		self.db.rollback()
+
+
 	def _form_address_query(self, address):
 		numbers = [address,]
 		try:
@@ -253,6 +258,10 @@ args:
       Specifies the Samsung NPS database file (usually called "Guest.dat")
       By default, this is at "%%AppData%%\Samsung\New PC Studio\Guest.dat"
 
+  --dry-run
+      Performs all the steps, but discards changes to the iPhone SMS database
+	  at the end. Specifying this flag will skip the final "commit?" prompt.
+
   --yes
       Supresses the prompt to commit the imported SMSes
 
@@ -269,7 +278,8 @@ if __name__ == '__main__':
 					'country=', 
 					'after-date=', 
 					'yes', 
-					'verbose'
+					'verbose',
+					'dry-run'
 					])
 	except getopt.GetoptError, err:
 		print 'error: ', str(err)
@@ -282,6 +292,7 @@ if __name__ == '__main__':
 	skip_prompt = False
 	country = None
 	after_date = ''
+	dry_run = False
 
 	for opt, arg in opts:
 		if opt == '--smsdb':
@@ -296,6 +307,8 @@ if __name__ == '__main__':
 			skip_prompt = True
 		elif opt == '--verbose':
 			verbose = True
+		elif opt == '--dry-run':
+			dry_run = True
 
 	if not country:
 		print "error: country was not specified"
@@ -344,6 +357,10 @@ if __name__ == '__main__':
 	print "inserted:\t", count_inserted
 	print "TOTAL:\t\t", count_total
 	print
+
+	if dry_run:
+		isms.rollback()
+		sys.exit(0)
 
 	do_commit = True
 	if not skip_prompt:
