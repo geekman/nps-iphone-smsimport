@@ -27,6 +27,11 @@ Duplicate SMSes will not be inserted. SMSes with the same date/time, same
 text content and direction (sent or received) and same phone number will be 
 considered duplicates.
 
+EMSes are not supported in the Samsung New PC Studio and therefore have no 
+text content. However, for completeness, the script will import these messages 
+but with a standard placeholder text. If you do not wish to include EMSes, use 
+the `--skip-ems` option to not import them.
+
 
 Requirements
 -------------

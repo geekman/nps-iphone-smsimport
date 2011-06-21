@@ -198,10 +198,10 @@ def read_NPS_sms(nps_db_path=None, filters=[]):
 	rs = win32com.client.Dispatch(r'ADODB.Recordset')
 
 	rs.Cursorlocation = 3;
-	filters.append("TYPE = 'SMS'")
-	rs.Open("SELECT *, IIF(SENDER IS NOT NULL, 2, 3) AS FLAGS " +
-			"FROM MESSAGE WHERE " + 
-			" AND ".join(filters), adoconn);
+	nps_sql = "SELECT *, IIF(SENDER IS NOT NULL, 2, 3) AS FLAGS FROM MESSAGE"
+	if filters:
+		nps_sql += " WHERE " + " AND ".join(filters)
+	rs.Open(nps_sql, adoconn);
 
 	sms = []
 	if (rs.RecordCount):
@@ -221,6 +221,9 @@ def read_NPS_sms(nps_db_path=None, filters=[]):
 				'date':		int( rs.Fields.Item('Create_date').Value ),
 				'flags':	rs.Fields.Item('Flags').Value,
 				}
+
+			if rs.Fields.Item('Type').Value == 'EMS':
+				s['text'] = '<Imported EMS Placeholder>';
 
 			sms.append(s)
 
@@ -256,6 +259,9 @@ args:
       Performs all the steps, but discards changes to the iPhone SMS database
 	  at the end. Specifying this flag will skip the final "commit?" prompt.
 
+  --skip-ems
+      Skips EMSes, which include SMSes longer than 160 characters.
+
   --yes
       Supresses the prompt to commit the imported SMSes
 
@@ -273,7 +279,8 @@ if __name__ == '__main__':
 					'after-date=', 
 					'yes', 
 					'verbose',
-					'dry-run'
+					'dry-run',
+					'skip-ems',
 					])
 	except getopt.GetoptError, err:
 		print 'error: ', str(err)
@@ -288,6 +295,7 @@ if __name__ == '__main__':
 		'country':			None,
 		'after_date':		'',
 		'dry_run':			False,
+		'skip_ems':			False,
 	}
 
 	for opt, arg in opts:
@@ -306,6 +314,9 @@ if __name__ == '__main__':
 
 	# process NPS filters
 	nps_filters = []
+	nps_filters.append("(TYPE = 'SMS'" + 
+			("" if config['skip_ems'] else " OR TYPE = 'EMS'") + 
+			")")
 	if config['after_date']:
 		nps_filters.append("CREATE_DATE >= #%s#" % (config['after_date']))
 
