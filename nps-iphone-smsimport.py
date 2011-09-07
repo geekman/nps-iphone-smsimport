@@ -266,7 +266,7 @@ args:
       Supresses the prompt to commit the imported SMSes
 
   --verbose
-      Prints all the SMS in the NPS database
+      Prints raw SMS details (can be specified multiple times)
 """ % (sys.argv[0])
 	
 
@@ -290,7 +290,7 @@ if __name__ == '__main__':
 	config = {
 		'nps_db_path':		None,
 		'sms_db_path':		'sms.db',
-		'verbose':			False,
+		'verbose':			0,
 		'skip_prompt':		False,
 		'country':			None,
 		'after_date':		'',
@@ -303,6 +303,8 @@ if __name__ == '__main__':
 
 		if type(config[opt]) is bool:
 			config[opt] = True
+		elif type(config[opt]) is int:
+			config[opt] = config[opt] + 1
 		else:
 			# needs arg
 			config[opt] = arg
@@ -334,11 +336,11 @@ if __name__ == '__main__':
 
 		if not s['text'] or not s['text'].strip():
 			count_empty += 1
-			print "skipping empty SMS", s
+			if config['verbose'] >= 2: print "skipping empty SMS", s
 			continue
 
 		if isms.sms_exists(s):
-			if config['verbose']: print "duplicate SMS", s
+			if config['verbose'] >= 2: print "duplicate SMS", s
 			count_dup += 1
 		else:
 			if not isms.get_group_id(s['address']):

@@ -32,6 +32,9 @@ text content. However, for completeness, the script will import these messages
 but with a standard placeholder text. If you do not wish to include EMSes, use 
 the `--skip-ems` option to not import them.
 
+Use the `--verbose` option to show the SMSes that will be imported. Specifying
+the option multiple times will show more information, such as empty or 
+duplicate SMSes.
 
 Requirements
 -------------
