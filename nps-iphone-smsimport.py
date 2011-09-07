@@ -206,11 +206,16 @@ def read_NPS_sms(nps_db_path=None, filters=[]):
 	sms = []
 	if (rs.RecordCount):
 		while not rs.EOF:
-			address = ''
+			address = None
 			if rs.Fields.Item('Sender').Value:
 				address = rs.Fields.Item('Sender').Value
 			else:
 				address = rs.Fields.Item('Receiver').Value
+
+			# skip SMSes with no address - these are likely drafts
+			if address is None:
+				rs.MoveNext()
+				continue
 
 			# strip trailing semicolon
 			address = address.replace(';', '')
