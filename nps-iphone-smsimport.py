@@ -25,7 +25,10 @@ from sqlite3 import dbapi2 as sqlite
 import win32com.client
 from   win32com.shell import shell, shellcon
 import phonenumbers
+import AMDevice
 
+# location of sms.db on the iPhone
+IPHONE_SMS_DB = '/var/mobile/Library/SMS/sms.db'
 
 class iPhoneSMSDB:
 	"""Class to query and manipulate the iPhone SMS Database."""
@@ -285,6 +288,7 @@ if __name__ == '__main__':
 		'after_date':		'',
 		'dry_run':			False,
 		'skip_ems':			False,
+		'iphone':			False,
 	}
 
 	try:
@@ -322,6 +326,29 @@ if __name__ == '__main__':
 			")")
 	if config['after_date']:
 		nps_filters.append("CREATE_DATE >= #%s#" % (config['after_date']))
+
+	# operate on the device
+	dev = None
+	afc = None
+	if config['iphone']:
+		# check for existence of sms.db first
+		if os.path.exists(config['smsdb']):
+			raise IOError, "iPhone SMS db already exists at '%s' - will not overwrite." % config['smsdb']
+
+		dev = AMDevice.MobileDevice()
+		print "waiting for iPhone to be connected...",
+		dev.wait()
+		if dev.has_device():
+			dev.connect()
+			print "ok"
+
+			try:
+				afc = dev.start_afc("com.apple.afc2")
+			except:
+				print "You need a jailbroken iPhone to access its filesystem"
+				sys.exit(3)
+
+			afc.download_file(IPHONE_SMS_DB, config['smsdb'])
 
 	nps_sms = read_NPS_sms(config['npsdb'], nps_filters)
 	isms = iPhoneSMSDB(config['country'], config['smsdb'])
@@ -372,6 +399,12 @@ if __name__ == '__main__':
 		print "committing...",
 		isms.commit()
 		print "done"
+
+		# upload back to the iphone
+		if config['iphone']:
+			print "uploading sms.db to iPhone...",
+			afc.upload_file(config['smsdb'], IPHONE_SMS_DB)
+			print "done"
 	else:
 		print "not commited"
 

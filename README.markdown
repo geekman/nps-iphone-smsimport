@@ -36,6 +36,13 @@ Use the `--verbose` option to show the SMSes that will be imported. Specifying
 the option multiple times will show more information, such as empty or 
 duplicate SMSes.
 
+To directly sync SMSes to a jailbroken iPhone, specify the `--iphone` option,
+which downloads `sms.db` from the connected iPhone to the default location
+(specified using the `--smsdb` option), performs the usual sync, and then
+uploads the updated file back to the iPhone. Do not attempt to connect more
+than one iOS device - unplug all your iOS devices and leave only the iPhone you
+wish to sync connected.
+
 Requirements
 -------------
 You need at least Python 2.6 running Windows on the same machine as the 
