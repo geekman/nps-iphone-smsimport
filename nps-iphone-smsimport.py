@@ -35,6 +35,7 @@ class iPhoneSMSDB:
 
 	db = None
 	default_country = None
+	dirty = False
 
 	def __init__(self, default_country, sms_db):
 		if not os.path.isfile(sms_db):
@@ -49,9 +50,13 @@ class iPhoneSMSDB:
 
 
 	def __del__(self):
+		self.close()
+
+
+	def close(self):
 		if self.db:
 			self.db.close()
-
+			self.db = None
 
 	def commit(self):
 		"""Commits the database"""
@@ -122,6 +127,7 @@ class iPhoneSMSDB:
 		c.execute("INSERT INTO group_member(group_id, address, country) " + 
 				"VALUES(?, ?, ?)", 
 				(group_id, address, country))
+		self.dirty = True
 
 		return group_id
 
@@ -169,6 +175,7 @@ class iPhoneSMSDB:
 
 		c = self.db.cursor()
 		c.execute(stm, vals)
+		self.dirty = True
 
 
 def get_number_country(number, default_country):
@@ -391,20 +398,30 @@ if __name__ == '__main__':
 		isms.rollback()
 		sys.exit(0)
 
-	do_commit = True
-	if not config['skip_prompt']:
-		do_commit = raw_input("commit? (y/N) ").strip().lower() == 'y'
+	do_commit = False
+	if isms.dirty:
+		do_commit = True
+		if not config['skip_prompt']:
+			do_commit = raw_input("commit? (y/N) ").strip().lower() == 'y'
 
-	if do_commit:
-		print "committing...",
-		isms.commit()
-		print "done"
+		if do_commit:
+			print "committing...",
+			isms.commit()
+			print "done"
+		else:
+			print "not commited"
+			isms.rollback()
+	else:
+		print "no changes"
 
-		# upload back to the iphone
-		if config['iphone']:
+	isms.close()
+
+	# upload back to the iphone, or remove unchanged file
+	if config['iphone']:
+		if do_commit:
 			print "uploading sms.db to iPhone...",
 			afc.upload_file(config['smsdb'], IPHONE_SMS_DB)
 			print "done"
-	else:
-		print "not commited"
+		else:
+			os.unlink(config['smsdb'])
 
