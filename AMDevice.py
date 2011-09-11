@@ -269,7 +269,8 @@ class AFCService:
 			raise RuntimeError
 
 	def __del__(self):
-		AFCConnectionClose(self.afc_conn);
+		if self.afc_conn:
+			AFCConnectionClose(self.afc_conn)
 
 	def __repr__(self):
 		return 'AFCService(%s)' % self.service_name
