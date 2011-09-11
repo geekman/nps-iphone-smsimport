@@ -240,7 +240,7 @@ def print_usage():
 	print """
 NPS SMS Importer.
 
-%s --country <country> [--smsdb <x> | --npsdb <x> | --yes | --verbose ] ...
+%s --country <country> [--smsdb <x> | --npsdb <x> | --verbose ] ...
 
 args:
 
@@ -267,7 +267,7 @@ args:
   --skip-ems
       Skips EMSes, which include SMSes longer than 160 characters.
 
-  --yes
+  --skip-prompt
       Supresses the prompt to commit the imported SMSes
 
   --verbose
@@ -276,25 +276,9 @@ args:
 	
 
 if __name__ == '__main__':
-	try:
-		opts, args = getopt.getopt(sys.argv[1:], '', [
-					'smsdb=', 
-					'npsdb=', 
-					'country=', 
-					'after-date=', 
-					'yes', 
-					'verbose',
-					'dry-run',
-					'skip-ems',
-					])
-	except getopt.GetoptError, err:
-		print 'error: ', str(err)
-		print_usage()
-		sys.exit(2)
-
 	config = {
-		'nps_db_path':		None,
-		'sms_db_path':		'sms.db',
+		'npsdb':			None,
+		'smsdb':			'sms.db',
 		'verbose':			0,
 		'skip_prompt':		False,
 		'country':			None,
@@ -302,6 +286,18 @@ if __name__ == '__main__':
 		'dry_run':			False,
 		'skip_ems':			False,
 	}
+
+	try:
+		def needs_arg(k):
+			return config[k] is None or type(config[k]) is str
+
+		opts, args = getopt.getopt(sys.argv[1:], '', 
+				[k.replace('_', '-') + ("=" if needs_arg(k) else "") 
+					for k in config.keys()])
+	except getopt.GetoptError, err:
+		print 'error: ', str(err)
+		print_usage()
+		sys.exit(2)
 
 	for opt, arg in opts:
 		opt = opt[2:].replace('-', '_')
@@ -327,8 +323,8 @@ if __name__ == '__main__':
 	if config['after_date']:
 		nps_filters.append("CREATE_DATE >= #%s#" % (config['after_date']))
 
-	nps_sms = read_NPS_sms(config['nps_db_path'], nps_filters)
-	isms = iPhoneSMSDB(config['country'], config['sms_db_path'])
+	nps_sms = read_NPS_sms(config['npsdb'], nps_filters)
+	isms = iPhoneSMSDB(config['country'], config['smsdb'])
 
 	count_total		= 0
 	count_empty		= 0
