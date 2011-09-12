@@ -201,12 +201,10 @@ AFCFileRefWrite.argtypes = [ afc_connection_p, afc_file_ref, c_void_p, c_uint ]
 
 
 class AFCFile:
-	afc_svc = None
-	fh = afc_file_ref()
-
 	def __init__(self, afc_svc, path, mode):
 		self.afc_svc = afc_svc
 		self.path = path
+		self.fh = afc_file_ref()
 
 		# determine flags to use
 		open_flag = 0
@@ -254,10 +252,9 @@ class AFCFile:
 			raise IOError, "write error %d" % r
 
 class AFCService:
-	afc_sock = c_int()
-	afc_conn = afc_connection_p()
-
 	def __init__(self, dev, service_name="com.apple.afc"):
+		self.afc_sock = c_int()
+		self.afc_conn = afc_connection_p()
 		self.service_name = service_name
 
 		if AMDeviceStartService(dev.dev, 

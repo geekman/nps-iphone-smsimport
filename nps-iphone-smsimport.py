@@ -33,16 +33,13 @@ IPHONE_SMS_DB = '/var/mobile/Library/SMS/sms.db'
 class iPhoneSMSDB:
 	"""Class to query and manipulate the iPhone SMS Database."""
 
-	db = None
-	default_country = None
-	dirty = False
-
 	def __init__(self, default_country, sms_db):
 		if not os.path.isfile(sms_db):
 			raise IOError('database doesn\'t exist: ' + sms_db)
 
 		self.db = sqlite.connect(sms_db)
 		self.default_country = default_country.upper()
+		self.dirty = False
 
 		# register the user-defined function used by triggers
 		# 2nd bit is the "read" bit
