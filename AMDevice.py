@@ -208,10 +208,11 @@ class AFCFile:
 
 		# determine flags to use
 		open_flag = 0
-		if mode == 'w':		open_flag = 3
-		elif mode == 'r': 	open_flag = 2
-		else:
-			raise ValueError, "invalid file mode '%s'" % mode
+		for m in mode:
+			if m == 'w':		open_flag |= os.O_WRONLY + 1
+			elif mode == 'r': 	open_flag |= os.O_RDONLY + 1
+			else:
+				raise ValueError, "invalid file mode '%s'" % mode
 
 		r = AFCFileRefOpen(self.afc_svc.afc_conn, path, open_flag, 0, byref(self.fh))
 		if r != MDERR_OK:
