@@ -346,7 +346,7 @@ class MobileDevice:
 		self.has_dev.wait(timeout)
 
 	def has_device(self):
-		return self.has_dev.is_set() and self.dev is not None
+		return self.has_dev.isSet() and self.dev is not None
 
 	def connect(self):
 		if AMDeviceConnect(self.dev) != MDERR_OK: raise RuntimeError
