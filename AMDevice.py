@@ -69,10 +69,78 @@ except WindowsError:
 CoreFoundationDLL		= CDLL('CoreFoundation')
 
 CFStringRef = c_void_p
+CFIndex = c_long
+CFStringEncoding = c_uint32
+CFAllocatorRef = c_void_p
+CFBoolean = c_uint
+
+kCFStringEncodingUTF8 = 0x08000100
+kCFStringEncodingUnicode = 0x0100
 
 CFStringMakeConstantString = CoreFoundationDLL.__CFStringMakeConstantString
 CFStringMakeConstantString.restype = CFStringRef
 CFStringMakeConstantString.argtypes = [c_char_p]
+
+CFStringGetMaximumSizeForEncoding = CoreFoundationDLL.CFStringGetMaximumSizeForEncoding
+CFStringGetMaximumSizeForEncoding.restype = CFIndex
+CFStringGetMaximumSizeForEncoding.argtypes = [CFIndex, CFStringEncoding]
+
+CFStringCreateWithCharacters = CoreFoundationDLL.CFStringCreateWithCharacters
+CFStringCreateWithCharacters.restype = CFStringRef
+CFStringCreateWithCharacters.argtypes = [CFAllocatorRef, c_wchar_p, CFIndex]
+
+CFStringGetCString = CoreFoundationDLL.CFStringGetCString
+CFStringGetCString.restype = CFBoolean
+CFStringGetCString.argtypes = [CFStringRef, c_void_p, CFIndex, CFStringEncoding]
+
+CFStringGetLength = CoreFoundationDLL.CFStringGetLength
+CFStringGetLength.restype = CFIndex
+CFStringGetLength.argtypes = [CFStringRef]
+
+CFRelease = CoreFoundationDLL.CFRelease
+CFRelease.restype = None
+CFRelease.argtypes = [c_void_p]
+
+class CFString(object):
+	def __init__(self, s):
+		if s is None:	# NULL
+			self.buf = c_wchar_p()
+			self.ref = None
+		elif isinstance(s, (str, unicode)):
+			self.buf = c_wchar_p(s)
+			self.ref = CFStringCreateWithCharacters(None, 
+							self.buf, len(s))
+		else:
+			self.ref = s
+			if self.ref:
+				# copy data out from CFString
+				l = CFStringGetLength(self.ref)
+				buf_size = CFStringGetMaximumSizeForEncoding(l, kCFStringEncodingUnicode) + 1
+				self.buf = create_unicode_buffer(buf_size)
+				CFStringGetCString(self.ref, self.buf, buf_size, kCFStringEncodingUnicode)
+			else:
+				self.buf = c_wchar_p()
+
+		self._as_parameter_ = self.ref
+
+	@property
+	def str(self):
+		return self.buf.value
+
+	def __del__(self):
+		if self.ref:
+			CFRelease(self.ref)
+
+	def __nonzero__(self):
+		return bool(self.ref)
+
+	def __str__(self):
+		v = self.buf.value
+		return None if not v else v.replace(u'\u2019', '\'')
+
+	def from_param(p):
+		return p._as_parameter_
+
 
 # ----- iTunesMobileDevice DLL -----
 
@@ -158,6 +226,10 @@ AMDeviceStopSession.argtypes = [ am_device_p ]
 AMDeviceStartService = iTunesMobileDeviceDLL.AMDeviceStartService
 AMDeviceStartService.restype = c_uint
 AMDeviceStartService.argtypes = [ am_device_p, CFStringRef, POINTER(c_int) ]
+
+AMDeviceCopyValue = iTunesMobileDeviceDLL.AMDeviceCopyValue
+AMDeviceCopyValue.restype = CFString
+AMDeviceCopyValue.argtypes = [ am_device_p, CFString, CFString ]
 
 # AFC
 afc_connection_p = c_void_p
@@ -358,4 +430,13 @@ class MobileDevice:
 
 	def start_afc(self, service_name="com.apple.afc"):
 		return AFCService(self, service_name)
+
+	def copy_value(self, domain, value_name):
+		if domain is None:
+			domain = CFString(None)
+		s = AMDeviceCopyValue(self.dev, domain, value_name)
+		if s:
+			return s
+		else:
+			raise RuntimeError, "unable to copy value %s/%s" % (domain, value_name)
 
